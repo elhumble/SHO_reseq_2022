@@ -5,7 +5,7 @@
 
 This repository contains the scripts used for aligning reads and calling SNPs for resequenced individuals, running ANGSD, calling ROH, polarising alleles, annotating variants and running GONe.
 
-For subsequent analyses described in the paper, please see github repository [SHO_roh_load_2022](https://github.com/elhumble/SHO_roh_load_2022).
+For downstream analysis and visualisation of outputs, please see github repository [SHO_roh_load_2022](https://github.com/elhumble/SHO_roh_load_2022).
 
 **Code structure**
 -------------
