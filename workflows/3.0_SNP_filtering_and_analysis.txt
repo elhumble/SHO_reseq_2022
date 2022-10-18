@@ -1,0 +1,208 @@
+SNP filtering and analysis workflow
+
+# Downstream filtering and analysis on vcf file
+# On eddie interactive node in SHO_reseq_2022/
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#          BCFtools             #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+#~~ FILTER FOR BIALLELIC SNPS AND CHR LEVEL SCAFFS (SNP calling done on whole
+assembly)
+
+module load roslin/bcftools/1.9
+module load igmm/apps/vcftools/0.1.13
+module load roslin/plink/1.90p
+
+# In
+# /exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/4_vcftools/DS_NS
+
+bcftools view ../../3_catvars/DS_NS/ORYX_geno_DS_NS.vcf.gz -m2 -M2 -v snps
+--regions
+NW_024070185.1,NW_024070186.1,NW_024070187.1,NW_024070188.1,NW_024070189.1,\
+NW_024070190.1,NW_024070191.1,NW_024070192.1,NW_024070193.1,NW_024070194.1,NW_024070195.1,\
+NW_024070196.1,NW_024070197.1,NW_024070198.1,NW_024070199.1,NW_024070200.1,NW_024070201.1,\
+NW_024070202.1,NW_024070203.1,NW_024070204.1,NW_024070205.1,NW_024070206.1,NW_024070207.1,\
+NW_024070208.1,NW_024070209.1,NW_024070210.1,NW_024070211.1,NW_024070212.1,NW_024070213.1
+> ORYX_geno_DS_NS_biallelic_chr.vcf
+
+grep -v '#' ORYX_geno_DS_NS_biallelic_chr.vcf | wc -l
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#          VCFtools             #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+#~~ DEPTH STATS
+
+vcftools --vcf ORYX_geno_DS_NS_biallelic_chr.vcf --geno-depth --out
+ORYX_geno_DS_NS_biallelic_chr
+vcftools --vcf ORYX_geno_DS_NS_biallelic_chr.vcf --depth --out
+ORYX_geno_DS_NS_biallelic_chr
+
+# R script on local to explore results 0.2_vcf_cov.R
+
+#~~ Remove non-focal individuals and filter SNPs
+
+vcftools --vcf ORYX_geno_DS_NS_biallelic_chr.vcf --keep
+../../../../file_lists/focal_sample_IDs.txt \
+--min-meanDP 5 --max-meanDP 20 --minQ 30 --max-missing 0.95 \
+--mac 1 --recode \
+--recode-INFO-all --out ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf
+
+# Remove intermediate files
+
+rm ORYX_geno_DS_NS_biallelic_chr_mdepth.recode.vcf
+rm ORYX_geno_DS_NS_biallelic_chr_mdepth_miss.recode.vcf
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#          PLINK            #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+vcftools --vcf ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf.recode.vcf \
+--chrom-map ../../../../file_lists/chrom_map.txt --plink --out
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf
+
+# Recode format
+
+# first edit chr column to contain 'NW_' as PLINK doesn't like integers for
+# non-model sp.:
+
+awk 'BEGIN { OFS = "\t" } { $1 = "NW_" $1; print }'
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf.map > test
+mv test ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf.map
+
+
+# Allele frequencies within populations
+
+plink --file ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf --freq \
+--within ../../../../file_lists/catalog --out
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf \
+--allow-extra-chr --nonfounders --debug
+
+# Allele frequencies across all individuals
+
+plink --file ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf --freq \
+--out ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf \
+--allow-extra-chr --nonfounders --debug
+
+awk 'BEGIN{s=0;}{s=s+$5;}END{print s/NR;}'
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf.frq
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#          Relatedness          #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+#~~ LD
+
+plink --file ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf \
+--indep 50 5 2 --out ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf \
+--allow-extra-chr --debug
+
+# Filter for LD, run PLINK genome and prepare output for ngsrelate
+
+plink --file ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf \
+--extract ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf.prune.in \
+--geno 0.1 --maf 0.3 --hwe 0.001 \
+--genome \
+--out ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_ld \
+--recode vcf-iid \
+--allow-extra-chr --debug
+
+# Run NGSrelate
+
+/exports/cmvm/eddie/eb/groups/ogden_grp/software/ngsRelate/ngsRelate \
+-h ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_ld.vcf \
+-T GT \
+-O ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_ld.res \
+-c 1
+
+# Go to R script on local to analyse downstream data -- KING versus R1
+# 1.0_IBD.R
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~#
+#          ROH            #
+#~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+# Remove ranch individual from full sibling relationship: MSH648 (AZA) /MSH682
+# (Private ranch)
+# to balance populations
+
+# Remove two individuals from EAD displaying over 50% ancestry Hilwa: MSH238 &
+# MSH250
+
+#~~ PLINK
+
+plink --file ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf \
+--remove ../../../../file_lists/related_admixed.txt \
+--out ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf \
+--homozyg \
+--homozyg-snp 50 \
+--homozyg-kb 500 \
+--homozyg-density 50 \
+--homozyg-gap 1000 \
+--homozyg-window-snp 50 \
+--homozyg-window-het 3 \
+--homozyg-window-missing 5 \
+--homozyg-window-threshold 0.05 \
+--allow-extra-chr --nonfounders --debug
+              
+
+#~~ Other inbreeding coefficients
+
+plink --file ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf \
+--remove ../../../../file_lists/related_admixed.txt \
+--out ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf \
+--ibc --het \
+--allow-extra-chr --nonfounders --debug
+              
+              
+#~~ BCFtools
+
+module load igmm/apps/vcftools/0.1.13
+module load roslin/bcftools/1.10
+
+# Filter related and admixed individuals from vcf
+
+vcftools --vcf ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf.recode.vcf \
+--remove ../../../../file_lists/related_admixed_vcftools.txt --recode \
+--recode-INFO-all --out ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_focal
+
+# Run bcftools roh (allele frequency / model based)
+# AF 0.16 = avereage
+# M recombination rate 1.2 (cattle)
+
+bcftools roh --AF-dflt 0.16 -G 30 -M 1.2 -Or \
+-o ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_focal_bcftools_roh.txt \
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_focal.recode.vcf
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~#
+#          GONe           #
+#~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+# Create list of 2000000 randomly subsetted SNPs for GONe analysis
+
+# Generate list of SNPs
+
+cut -f 2 ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf.map > temp_SNP_IDs
+
+# Create random seed generator function
+
+get_seeded_random()
+{
+  seed="$1"
+  openssl enc -aes-256-ctr -pass pass:"$seed" -nosalt \
+    </dev/zero 2>/dev/null
+}
+
+# Extract random SNPs from list
+
+shuf -n 2000000 --random-source=<(get_seeded_random 28) temp_SNP_IDs >
+temp_SNP_sub
+
+# Run Gone
+
+qsub 8.0_GONe.sh
+

@@ -1,0 +1,314 @@
+# Pipeline for annotating variants
+   
+#~~~~~~~~~~~~~~~~#
+#   Run SNPeff   #
+#~~~~~~~~~~~~~~~~#
+
+# Run snpEff
+# https://pcingola.github.io/SnpEff/se_running/
+
+qsub 6.0_SNPeff.sh
+
+# adds annotation info into ANN field of VCF
+# output summaries are saved in running directory
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#    Remove sites with warnings   #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+# On qlogin
+
+module load igmm/apps/vcftools/0.1.13
+
+grep
+"WARNING_SEQUENCE_NOT_AVAILABLE\|WARNING_TRANSCRIPT_INCOMPLETE\|WARNING_TRANSCRIPT_MULTIPLE_STOP_CODONS\|WARNING_TRANSCRIPT_NO_START_CODON"
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated.vcf \
+| sed -e '1d' | cut -f1,2 > warning_sites.txt
+
+wc -l warning_sites.txt
+137214 warning_sites.txt
+
+# Filter from annotated vcf file
+
+vcftools --vcf
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated.vcf \
+--recode \
+--recode-INFO-all \
+--exclude-positions warning_sites.txt \
+--out
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated_filtered
+
+# 10165969
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#        Get site categories        #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+grep "LOF"
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated_filtered.recode.vcf
+| \
+sed -e '1d' | cut -f1,2 > lof_sites.txt
+
+grep "missense_variant"
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated_filtered.recode.vcf
+| \
+sed -e '1d' | cut -f1,2 > missense_sites.txt
+
+grep "synonymous_variant"
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated_filtered.recode.vcf
+| \
+sed -e '1d' | cut -f1,2 > synonymous_sites.txt
+
+grep "intergenic_region"
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated_filtered.recode.vcf
+| \
+sed -e '1d' | cut -f1,2 > intergenic_sites.txt
+  
+# Subsample intergenic sites:
+
+get_seeded_random()
+{
+  seed="$1"
+  openssl enc -aes-256-ctr -pass pass:"$seed" -nosalt \
+    </dev/zero 2>/dev/null
+}
+
+shuf -n 100000 --random-source=<(get_seeded_random 42) intergenic_sites.txt >
+intergenic_subsampled_sites.txt 
+
+wc -l *_sites.txt
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#        Extract genotypes          #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+# Get vcf file for each site category
+
+for i in lof missense synonymous intergenic intergenic_subsampled
+do
+	vcftools --vcf
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated_filtered.recode.vcf
+\
+	--recode \
+	--recode-INFO-all \
+	--positions ${i}_sites.txt \
+	--out
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated_filtered_${i}_snps
+done
+
+
+# Convert vcf to PLINK
+
+for i in missense synonymous lof intergenic intergenic_subsampled
+do
+	vcftools --vcf
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated_filtered_${i}_snps.recode.vcf
+\
+	--chrom-map ../../../../../file_lists/chrom_map.txt \
+	--plink \
+	--out
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated_filtered_${i}_snps
+done
+
+# Get plink traw file of 012 genotypes for all inds and each SNP category
+
+module load roslin/plink/1.90p
+
+for i in missense synonymous lof intergenic intergenic_subsampled
+do
+plink --file
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated_filtered_${i}_snps
+\
+--recode A-transpose \
+--out
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated_filtered_${i}_snps
+\
+--allow-extra-chr --debug
+done
+
+
+# Get allele frequencies within populations
+
+for i in missense synonymous lof intergenic intergenic_subsampled
+do
+	plink --file
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated_filtered_${i}_snps
+\
+	--freq \
+	--within ../../../../../file_lists/catalog \
+	--out
+ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated_filtered_${i}_snps
+\
+	--allow-extra-chr --debug --nonfounders
+done
+
+
+#~~~~~~~~~#
+#   VEP   #
+#~~~~~~~~~#
+
+# Prepare annotation file for VEP
+
+# GFF file downloaded from :
+# https://ftp.ncbi.nlm.nih.gov/genomes/all/annotation_releases/59534/100/GCF_014754425.2_SCBI_Odam_1.1/
+# Saved in annotation dir:
+# /exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_pop_gen_2020/data/annotation
+
+# On qlogin in data/annotation
+
+module load roslin/samtools/1.9
+module load igmm/libs/htslib/1.9
+
+# https://grch37.ensembl.org/info/docs/tools/vep/script/vep_cache.html#gff_req
+# https://grch37.ensembl.org/info/docs/tools/vep/script/vep_custom.html
+
+# sort gff file
+
+grep -v '#' GCF_014754425.2_SCBI_Odam_1.1_genomic.gff | sort -k1,1 -k4,4n
+-k5,5n -t$'\t' | bgzip -c > GCF_014754425.2_SCBI_Odam_1.1_genomic.gff.gz
+
+# tabix
+
+tabix -p gff GCF_014754425.2_SCBI_Odam_1.1_genomic.gff.gz
+
+#~~~~~~~~~~~~~#
+#   Run VEP   #
+#~~~~~~~~~~~~~#
+
+# In data/out/6_load/DS_NS/vep
+ 
+# Run VEP on polarised vcf file
+
+qsub 7.1_VEP.sh
+
+module load roslin/vep/99.2
+
+OUTPUT_DIR="/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_pop_gen_2020/data/out/6_load/DS_NS/vep"
+VCF="/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_pop_gen_2020/data/out/6_load/DS_NS/polarise/ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised.vcf"
+
+GFF="/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_pop_gen_2020/data/annotation/GCF_014754425.2_SCBI_Odam_1.1_genomic.gff.gz"
+REF="/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_pop_gen_2020/data/reference/GCF_014754425.2_SCBI_Odam_1.1_genomic.fna"
+
+# Run VEP on polarised vcf file
+
+vep -i $VCF \
+        --gff $GFF \
+        --pick \
+        --fasta $REF \
+        --output_file
+$OUTPUT_DIR/ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised_annotated.txt
+
+ 
+ 
+ 
+#~~ Filter sites
+# On qlogin
+
+module load roslin/vep/99.2
+
+# Filter for LOF, missense, synonymous, intergenic
+
+filter_vep -i ORYX_geno_HS_NS_biallelic_chr_mdepth_miss_maf_polarised.txt -o
+missense_sites.txt -filter "Consequence is missense_variant"
+filter_vep -i ORYX_geno_HS_NS_biallelic_chr_mdepth_miss_maf_polarised.txt -o
+synonymous_sites.txt -filter "Consequence is synonymous_variant"
+filter_vep -i ORYX_geno_HS_NS_biallelic_chr_mdepth_miss_maf_polarised.txt -o
+lof_sites.txt -filter "Consequence is transcript_ablation or Consequence is
+splice_donor_variant or Consequence is splice_acceptor_variant or Consequence
+is stop_gained or Consequence is frameshift_variant or Consequence is
+inframe_insertion or Consequence is inframe_deletion or Consequence is
+splice_region_variant"
+filter_vep -i ORYX_geno_HS_NS_biallelic_chr_mdepth_miss_maf_polarised.txt -o
+intergenic_sites.txt -filter "Consequence is intergenic_variant"
+
+
+# Subsample:
+
+
+get_seeded_random()
+{
+  seed="$1"
+  openssl enc -aes-256-ctr -pass pass:"$seed" -nosalt \
+    </dev/zero 2>/dev/null
+}
+
+shuf -n 100000 --random-source=<(get_seeded_random 42) intergenic_sites.txt >
+intergenic_subsampled_sites.txt 
+
+
+wc -l *sites.txt
+
+
+  5099047 intergenic_sites.txt
+   100000 intergenic_subsampled_sites.txt
+      789 lof_sites.txt
+    42469 missense_sites.txt
+    54301 synonymous_sites.txt
+  5296606 total
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#        Get site categories        #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+# Write text files for vcf filtering
+# CHR and position
+
+cat missense_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' >
+missense_IDs.txt
+cat synonymous_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' >
+synonymous_IDs.txt
+cat lof_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' >
+lof_IDs.txt
+cat intergenic_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/," ",$1)};1' >
+intergenic_IDs.txt
+cat intergenic_subsampled_sites.txt | awk '{ print $1 }' | awk '{sub(/\:/,"
+",$1)};1' > intergenic_subsampled_IDs.txt
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#        Extract genotypes          #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+# Get vcf files for each category
+
+module load igmm/apps/vcftools/0.1.13
+module load roslin/plink/1.90p
+
+for i in missense synonymous lof intergenic intergenic_subsampled
+do
+	vcftools --vcf
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/6_load/DS_NS/polarise/ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised.vcf
+\
+	--recode \
+	--stdout --positions ${i}_IDs.txt \
+	> ORYX_geno_HS_NS_biallelic_chr_mdepth_miss_maf_polarised_${i}_snps.vcf
+done
+
+
+# Get plink traw file of 012 genotypes for all inds and each SNP category
+
+for i in missense synonymous lof intergenic intergenic_subsampled
+do 
+vcftools --vcf
+ORYX_geno_HS_NS_biallelic_chr_mdepth_miss_maf_polarised_${i}_snps.vcf \
+--chrom-map ../../../../../file_lists/chrom_map.txt \
+--plink \
+--out ORYX_geno_HS_NS_biallelic_chr_mdepth_miss_maf_polarised_${i}_snps
+done
+
+
+for i in missense synonymous lof intergenic intergenic_subsampled
+do
+plink --file ORYX_geno_HS_NS_biallelic_chr_mdepth_miss_maf_polarised_${i}_snps
+\
+--recode A-transpose \
+--out ORYX_geno_HS_NS_biallelic_chr_mdepth_miss_maf_polarised_${i}_snps \
+--allow-extra-chr --debug
+done
+
+
+#~~ END
+#~~ Go to R project on local machine to process output
+

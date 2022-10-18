@@ -1,0 +1,251 @@
+# SHO SNP calling workflow
+# HS = HiSeq
+# NS = NovaSeq
+
+#~~ Raw data
+
+#~~~~~~~~~~~~~~~~~~~~~~~#
+# Download to datastore #
+#~~~~~~~~~~~~~~~~~~~~~~~#
+
+# Raw data downloaded onto the datastore (see eg_data_download.txt)
+# Contains first and second rounds of sequencing in 2020
+# See EdiGen upload in datastore for details
+
+#~~~~~~~~~~~~~~~~~~~#
+#  Upload to EDDIE  #
+#~~~~~~~~~~~~~~~~~~~#
+
+1.0_stage_in.sh
+
+#~~~~~~~~~~~~~~~~~~~#
+#     Cutadapt      #
+#~~~~~~~~~~~~~~~~~~~#
+
+# NS only as EdGen already filtered HS for adaptors
+
+1.1_cutadapt_NS.sh
+
+# >5000 runtime
+# < 1G mem
+
+#~~~~~~~~~~~~~~~~~~~~~#
+#     Index ref       #
+#~~~~~~~~~~~~~~~~~~~~~#
+
+# Index reference for GATK and bwa
+
+# https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/014/754/425/GCF_014754425.2_SCBI_Odam_1.1/
+# GCF_014754425.2_SCBI_Odam_1.1_genomic.fna.gz
+
+1.2_IndexRef.sh
+
+# 3938.485 runtime
+# 3.72 G
+
+#~~~~~~~~~~~~~~#
+#     BWA      #
+#~~~~~~~~~~~~~~#
+
+# Align reads to new reference genome
+
+#~~ NS
+
+2.0_AlignReads_NS.sh
+
+# ~ 3 hours
+# ~ 6G
+# Delete cutadapt reads on completion, keeping only bams
+
+#~~ HS
+
+2.0_AlignReads_HS.sh
+
+# >40 hours
+# ~ 6G
+# 50-86G bam files
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#        SortBam           #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+# Edited script inputs. Using the same script for HS as NS
+
+2.1_SortSam.sh
+
+#~~ NS
+# 1200 runtime / 6G
+# Removed mapped files on completion, keeping only mapped_sorted
+
+#~~ HS
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#        Add Read Groups         #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+#~~~ NS
+
+2.2_ReadGroups_NS.sh
+
+# ~ 800 runtime / 6Gb
+# deleted mapped and sorted bam files from scratch.
+
+#~~ HS
+
+2.2_ReadGroups_HS.sh
+
+# 5000-11100 secs / ~6GB
+
+# Check read groups
+
+module load roslin/samtools/1.9
+samtools view -H <bamfile> | grep '^@RG'
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#        Merge Samples        #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+# Merge NS samples (multiple seq runs)
+
+#~~ NS
+
+samples=$(awk '{print $1}'
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_pop_gen_2020/file_lists/samples_NS.txt)
+for i in $samples; do mkdir
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_pop_gen_2020/data/out/bwa/$i;
+done
+for i in $samples; do mv *$i* $i/; done
+
+2.3_MergeSam_NS.sh
+
+# 1600 secs, 10G
+# deleted unmerged files
+
+#~~ HS
+
+# No need to run this.
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#        Mark Duplicates        #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+# Mark and remove dups
+
+#~~ NS
+
+2.4_MarkDups_NS.sh
+
+# 3500 secs
+# ~6G
+# after coverage calculations, removed all bams pre rmdup
+
+#~~ HS
+
+2.4_MarkDups_HS.sh
+
+# 20,000
+# 12G
+
+#~~~~~~~~~~~~~~~~~#
+#   Bam Coverage  #
+#~~~~~~~~~~~~~~~~~#
+
+2.5_BamCov.sh
+
+# Edited paths for HS / DS / NS
+
+# move files into cov directory
+# Remove merged.bam / sorted.RG.bam after running this script. Keep only
+# rmdup.bam
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#       Downsample bams       #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+# This is done as the proportion of total bam so need to know full coverage
+# for each sample
+# Use R script on local machine 0.1_bam_cov.R to determine proportion of rmdup
+# bam file to subsample to 6X
+# Or run 2.6_HS_DS.sh on eddie
+# 6X is average DOC of low coverage samples
+
+2.6_HS_DS.sh
+
+# Downsample based on output
+
+2.7_DownsampleBams.sh
+
+#~~~~~~~~~~~~~~~~~#
+#   Index bams    #
+#~~~~~~~~~~~~~~~~~#
+
+# Index downsampled bams
+
+2.8_IndexBams.sh
+
+# Edited script for HS and NS
+
+# 200 secs, <1G
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#             GATK              #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+# Create reference sequence dictionary for GATK
+
+qsub 3.0_Sequence_Dictionary.sh
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#       HAPLOTYPE CALLER        #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+# Run HapCaller as an array job (29 chromosomes + unplaced scaffs = 30) within
+# an array job (samples)
+# Running with intervals lists 1-29 plus all remaining scaffs (total = 30)
+# Running on NS and downsampled HS samples (DS)
+
+#~~ NS
+
+./run_3.1_HapCaller_NS.sh
+
+# 10G
+# 15000 secs
+
+#~~ DS
+
+./run_3.1_HapCaller_HS.sh
+
+# 5000 secs
+# ~10G
+
+# output in 1_HapCaller
+
+#~~~~~~~~~~~~~~~~~~~~~~~#
+#    Genotype GVCFs     #
+#~~~~~~~~~~~~~~~~~~~~~~~#
+
+# Run GGVCFs on downsampled (DS) bams AND NS bams
+
+3.2_GGVCFs_DS_NS.sh
+
+# Finds files in NS and DS and combines
+
+# ~30000 secs
+# ~10G
+
+#~~~~~~~~~~~~~~~~~~~~#
+#    CatVariants     #
+#~~~~~~~~~~~~~~~~~~~~#
+
+3.3_CatVariants.sh
+
+# <2000 secs
+# <10G
+
+
+#~~ END
+#~~ Go to SNP_filtering_and_analysis_2022.txt
+
+
+
