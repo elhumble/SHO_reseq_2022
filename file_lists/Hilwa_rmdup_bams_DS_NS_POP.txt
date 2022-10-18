@@ -1,0 +1,15 @@
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/DS/G445_mapped_sorted_RG_rmdup_downsample.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/DS/G449_mapped_sorted_RG_rmdup_downsample.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/NS/MSH701_merged_rmdup.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/NS/MSH703_merged_rmdup.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/NS/MSH704_merged_rmdup.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/NS/MSH705_merged_rmdup.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/NS/MSH708_merged_rmdup.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/NS/MSH710_merged_rmdup.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/NS/MSH712_merged_rmdup.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/NS/MSH725_merged_rmdup.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/NS/MSH728_merged_rmdup.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/NS/MSH731_merged_rmdup.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/NS/MSH735_merged_rmdup.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/NS/MSH737_merged_rmdup.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/NS/MSH746_merged_rmdup.bam

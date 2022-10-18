@@ -1,0 +1,9 @@
+/data
+/e_files
+/o_files
+/old
+jobsum.txt
+1.0_StageIn.sh
+9_StageOut.sh
+7.2_SIFT_db.sh
+8.1_SNeP.sh

@@ -1,0 +1,9 @@
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/DS/W200_mapped_sorted_RG_rmdup_downsample.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/DS/G421_mapped_sorted_RG_rmdup_downsample.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/DS/G427_mapped_sorted_RG_rmdup_downsample.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/DS/MSH233_mapped_sorted_RG_rmdup_downsample.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/DS/MSH238_mapped_sorted_RG_rmdup_downsample.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/DS/MSH241_mapped_sorted_RG_rmdup_downsample.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/DS/MSH244_mapped_sorted_RG_rmdup_downsample.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/DS/MSH250_mapped_sorted_RG_rmdup_downsample.bam
+/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/DS/MSH306_mapped_sorted_RG_rmdup_downsample.bam
