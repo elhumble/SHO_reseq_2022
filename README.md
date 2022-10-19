@@ -5,7 +5,9 @@
 
 This repository contains the scripts used for aligning reads and calling SNPs for resequenced individuals, running ANGSD, calling ROH, polarising alleles, annotating variants and running GONe.
 
-Workflows for each stage of the pipeline are stored under `/workflows`  
+Detailed workflows for each stage of the pipeline are stored under `/workflows`.  
+
+Some of the bash scripts are highly parallelised and call additional scripts inside the `/scripts` directory.  
 
 For downstream analysis and visualisation of outputs, please see github repository [SHO_roh_load_2022](https://github.com/elhumble/SHO_roh_load_2022).
 
@@ -30,19 +32,20 @@ For downstream analysis and visualisation of outputs, please see github reposito
 
 *SNP calling*   
 `3.0_SeqDict.sh`  
-`3.1_HapCaller.sh`  
+`3.1_run_HapCaller_DS.sh`  
+`3.1_run_HapCaller_NS.sh`  
 `3.2_GGVCFs_DS_NS.sh`  
 `3.3_CatVariants.sh`  
 
 *ANGSD analysis*    
 `4.0_angsd.sh`  
-`4.1_angsd_pop.sh`  
+`4.1_run_angsd_pop.sh`  
 `4.2_angsd_ld.sh`  
-`4.3_angsd_ld_pop.sh`  
-`4.4_angsdHet.sh`  
-`4.5_realSFS.sh`  
-`4.6_SFS_pop.sh`  
-`4.7_doThetas_pop.sh`  
+`4.3_run_angsd_ld_pop.sh`  
+`4.4_run_angsdHet.sh`  
+`4.5_run_realSFS.sh`  
+`4.6_run_SFS_pop.sh`  
+`4.7_run_doThetas_pop.sh`  
 `5.0_PCAngsd.sh`  
 `5.1_NGSadmix.sh`  
 
