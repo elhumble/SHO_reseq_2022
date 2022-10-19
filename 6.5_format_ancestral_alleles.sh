@@ -18,4 +18,4 @@
 
 module load R
 
-Rscript format_ancestral_alleles.R
+Rscript scripts/format_ancestral_alleles.R

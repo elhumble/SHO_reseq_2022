@@ -18,4 +18,4 @@
 
 module load R
 
-Rscript vcf_to_bed.R
+Rscript scripts/vcf_to_bed.R

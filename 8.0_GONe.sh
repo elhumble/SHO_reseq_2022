@@ -38,12 +38,12 @@ plink --file $TARGET_DIR/$PLINK_FILE \
 
 # Recode map file CHR column for GONe
 
-Rscript recode_map_gone.R $OUT_DIR/${POP}/${PLINK_FILE_GONE}.map
+Rscript scripts/recode_map_gone.R $OUT_DIR/${POP}/${PLINK_FILE_GONE}.map
 
 # Run Gone
 echo $OUT_DIR/$POP/$PLINK_FILE_GONE
 
-bash script_GONE.sh $OUT_DIR/$POP/$PLINK_FILE_GONE
+bash scripts/script_GONE.sh $OUT_DIR/$POP/$PLINK_FILE_GONE
 
 mv outfileHWD outfileLD_d2_sample outfileLD_Ne_estimates seedfile timefile $OUT_DIR/$POP
 mv TEMPORARY_FILES $OUT_DIR/$POP

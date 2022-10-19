@@ -17,5 +17,5 @@ module load R
 
 # Run Rscript to determine downsampling proportions
 
-Rscript bam_cov_DS.R
+Rscript scripts/bam_cov_DS.R
 
