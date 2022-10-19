@@ -101,6 +101,6 @@ subsample <- cov %>%
 		    mutate(prop_sub = round(prop_sub, 2)) %>%
 		    mutate(prop_sub = gsub("0.", "1.", prop_sub)) # replacing 0 with 1 for samtools view -s syntax
 		    
-write.table(subsample[c(1,6)], "/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/data/out/0.1_bwa/HS/proportion_to_downsample.txt",
+write.table(subsample[c(1,6)], "/exports/cmvm/eddie/eb/groups/ogden_grp/emily/SHO_reseq_2022/file_lists/proportion_to_downsample.txt",
 	    quote = F, col.names = F, row.names = F)
 
