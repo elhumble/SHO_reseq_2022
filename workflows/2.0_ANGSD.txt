@@ -7,7 +7,6 @@
 # GLs output in beagle
 # Filtered for polymorphic sites (SNPpval)
 # Running as array across chromosomes
-# Min depth 245 (5*49), max depth 1000
 
 #~~ Run across all focal individuals
 
@@ -15,19 +14,11 @@ qsub 4.0_angsd.sh
 
 # Output is beagle, geno, mafs per scaff
 
-# DS_NS
-# 11 hours max
-# <5G
-
-
 #~~ Run for each population separately, array within array
 
 # Output for LD calculations
 
-./run_4.1_angsd_pop.sh
-
-# Removed depth filters as would need per pop given n of inds
-
+./4.1_run_angsd_pop.sh
 
 #~~~~~~~~~~~~~~~~~~~#
 #       ngsLD       #
@@ -35,28 +26,18 @@ qsub 4.0_angsd.sh
 
 # Run ngsLD on each chromosome
 # To speed up downstream on R, I took a subset of sites from each beagle / maf
-# file
-# Following
+# file following
 # https://github.com/nt246/lcwgs-guide-tutorial/blob/main/tutorial3_ld_popstructure/markdowns/ld.md
 
 #~~ Across all individuals 
 
 qsub 4.2_angsd_ld.sh
 
-# < 1G / < 5 secs
-
-# Move output into ld folder
-
 #~~ Per pop
 
-./run_4.3_angsd_pop.sh
+./4.3_run_angsd_pop.sh
 
-# < 1G / < 5 secs
-
-# Move output to ld_pop folder
-
-# Downstream processing on local 2.0_ngsld.R
-
+# Downstream processing on local
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #   Join beagle files for downstream analysis   #
@@ -64,11 +45,12 @@ qsub 4.2_angsd_ld.sh
 
 # Join autosomal beagle files together for downstream processing
 
-# On qlogin
+# On interactive qlogin node
 
 gunzip *1.beagle.gz
 
 # gzip sex chr
+
 gzip NW_024070207.1.beagle
 
 # merge autosomes while only keeping header from first file
@@ -82,8 +64,8 @@ wc -l ORYX_GL_HS_NS.beagle
 #~~ DS_NS
  
 # gzip beagle files again
-gzip *.beagle
 
+gzip *.beagle
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #       Diversity estimates       #
@@ -92,32 +74,17 @@ gzip *.beagle
 #~~ Calculate genome-wide heterozygosity for each individual using single ind
 SFS
 
-./run_4.4_angsdHet.sh
+./4.4_run_angsdHet.sh
 
 # < 5G
 # < 1000 secs
 
-./run_4.5_realSFS.sh
-
-# < 5G
-# < 1000 secs
-
+./4.5_run_realSFS.sh
 
 #~~ Get population wide thetas for DS_NS
 
-./run_4.6_SFS_pop.sh
-
-#~~ DS_NS
-
-# <20G, <3.5 hrs
-
-4.7_doThetas_pop.sh
-
-./run_4.7_doThetas.sh
-
-#~~ DS_NS
-
-<2000 seconds <10G
+./4.6_run_SFS_pop.sh
+./4.7_run_doThetas_pop.sh
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #       Population structure       #
@@ -127,25 +94,15 @@ SFS
 
 qsub 5.0_PCAngsd.sh
 
-#~~ DS_NS
-
-# <500 seconds, < 5G
-
-# Process output in R
-
+# Process output in R on local
 
 #~~ NGSadmix
 
 qsub 5.1_NGSadmix.sh
 
-#~~ DS_NS
-
-# 20 mins to 17 hours (<10G)
-
 # Process output in R
 
 #~~ END
 #~~ Go to R project on local machine to process output
-
 
 

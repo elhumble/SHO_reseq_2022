@@ -8,12 +8,14 @@ Workflow to polarise alleles using outgroup species
 
 Blue wildebeest Connochaetes taurinus
 https://trace.ncbi.nlm.nih.gov/Traces/sra/?run=SRR6902709
+
 Topi Damaliscus lunatus
 https://trace.ncbi.nlm.nih.gov/Traces/sra/?run=SRR6913384
-						https://trace.ncbi.nlm.nih.gov/Traces/sra/?run=SRR6913385				
+https://trace.ncbi.nlm.nih.gov/Traces/sra/?run=SRR6913385
+				
 Hartebeest Alcelaphus buselaphus
 https://trace.ncbi.nlm.nih.gov/Traces/sra/?run=SRR6922939
-								https://trace.ncbi.nlm.nih.gov/Traces/sra/?run=SRR6922940
+https://trace.ncbi.nlm.nih.gov/Traces/sra/?run=SRR6922940
 
 #~~~~~~~~~~~~~~~~~~~#
 #   Download data   #
@@ -21,13 +23,6 @@ https://trace.ncbi.nlm.nih.gov/Traces/sra/?run=SRR6922939
 
 # Download data from SRA:
 # https://github.com/ncbi/sra-tools/wiki/HowTo:-fasterq-dump
-
-# Using screen to download
-
-ssh ehumble@login01-ext.ecdf.ed.ac.uk
-screen
-qlogin -l h_vmem=2G -pe sharedmem 4
-qlogin -pe sharedmem 4
 
 module load igmm/apps/sratoolkit/2.10.8
 
@@ -42,20 +37,17 @@ fasterq-dump --split-files -e 4 SRR6913384
 
 # hartebeest
 fasterq-dump --split-files -e 4 SRR6922939
-
-# extra coverage for hartebeest (did this post mapping and cov checking)
 fasterq-dump --split-files -e 4 SRR6922940
 
 # Align to SHO genome assembly
 
 6.0_align_sp.sh
->72000 / <8G
 
 # SortSam
 
 6.1_SortSam.sh
 
-# Outputs into data/out/6_load/DS_NS/polarise/wildebeest_topi_hartebeest
+# Output in data/out/6_load/DS_NS/polarise/wildebeest_topi_hartebeest
 
 #~~~~~~~~~~~~~~#
 #   Coverage   #
@@ -70,33 +62,23 @@ module add roslin/samtools/1.10
 
 mkdir cov
 
-samtools coverage SRR6902709_mapped_sorted.bam >
-SRR6902709_mapped_sorted_cov.txt
-samtools coverage SRR6913384_mapped_sorted.bam >
-SRR6913384_mapped_sorted_cov.txt
-samtools coverage SRR6922939_mapped_sorted.bam >
-SRR6922939_mapped_sorted_cov.txt
-samtools coverage SRR6922940_mapped_sorted.bam >
-SRR6922940_mapped_sorted_cov.txt
+samtools coverage SRR6902709_mapped_sorted.bam > SRR6902709_mapped_sorted_cov.txt
+samtools coverage SRR6913384_mapped_sorted.bam > SRR6913384_mapped_sorted_cov.txt
+samtools coverage SRR6922939_mapped_sorted.bam > SRR6922939_mapped_sorted_cov.txt
+samtools coverage SRR6922940_mapped_sorted.bam > SRR6922940_mapped_sorted_cov.txt
 
-awk '{print $7}' SRR6902709_mapped_sorted_cov.txt >
-cov/SRR6902709_mapped_sorted_cov.txt
-awk '{print $7}' SRR6913384_mapped_sorted_cov.txt >
-cov/SRR6913384_mapped_sorted_cov.txt
-awk '{print $7}' SRR6922939_mapped_sorted_cov.txt >
-cov/SRR6922939_mapped_sorted_cov.txt
-awk '{print $7}' SRR6922940_mapped_sorted_cov.txt >
-cov/SRR6922940_mapped_sorted_cov.txt
+awk '{print $7}' SRR6902709_mapped_sorted_cov.txt > cov/SRR6902709_mapped_sorted_cov.txt
+awk '{print $7}' SRR6913384_mapped_sorted_cov.txt > cov/SRR6913384_mapped_sorted_cov.txt
+awk '{print $7}' SRR6922939_mapped_sorted_cov.txt > cov/SRR6922939_mapped_sorted_cov.txt
+awk '{print $7}' SRR6922940_mapped_sorted_cov.txt > cov/SRR6922940_mapped_sorted_cov.txt
 
 rm *cov.txt
 
-# Check coverage on local 5.0_outgroup_depth.R
+# Check coverage on local 3.0_outgroup_depth.R
 
 # Merge bam files with samtools
 
 6.2_MergeSam.sh
-
-4500 secs, 10G
 
 # Output is outgroup_merged.bam
 
@@ -109,8 +91,6 @@ rm *cov.txt
 
 6.3_doFasta.sh
 
-19G / 10,500 secs (3 hours)
-
 # Output is outgroup_consensus.fasta.fa
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -122,8 +102,6 @@ rm *cov.txt
 # Extract SNP positions from filtered VCF file and convert to bed file
 
 6.4_vcf_to_bed.sh
-
-# 66 secs < 2G
 
 # Output is ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf.bed
 
@@ -143,10 +121,7 @@ bedtools getfasta -fi outgroup_consensus.fasta.fa \
 
 6.5_format_ancestral_alleles.sh
 
-# <6G, <200 secs
-
 # Output is ancestral_alleles.txt for use when polarising PLINK files
-
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #      Polarise alleles       #
@@ -162,7 +137,7 @@ https://groups.google.com/g/plink2-users/c/cJAeJ3OztV4/m/bqHjOZUAAQAJ
 module load roslin/plink/2.0.0
 
 # Convert plink files into vcf
-# Need to first add ID column into VCF as this is what PLINK uses to search
+# First add ID column into VCF as this is what PLINK uses to search
 # SNPs
 
 plink2 --vcf
@@ -173,7 +148,6 @@ plink2 --vcf
 --allow-extra-chr \
 --out temp
 
-# 10980496 SNPs
 # remove SNPs with Ns in alignment (and therefore can't infer) 
 # Switch ref alleles when they are wrong
 # Extract SNPs that could be identified in wildebeest alignment and rotate
@@ -188,13 +162,8 @@ plink2 --vcf temp.vcf \
 --allow-extra-chr \
 --out temp2
 
-# 3060249 codes rotated
-
-# 441241 SNPs removed, 10539255 remaining
-
-# Some (236072) SNPs had ref allele mismatches i.e. ancestral allele from
-# alignment matched neither of the SNPs
-# Remove these
+# Remove these SNPs with ref allele mismatches i.e. ancestral allele
+# from alignment matched neither of the SNPs
 
 grep 'Warning' temp2.log | awk {'print $7'} | sed 's/.//;s/.$//' | sed
 's/.$//' > mismatches.txt
@@ -206,12 +175,10 @@ plink2 --vcf temp2.vcf \
 --threads 1 \
 --out ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf_polarised
 
-# 10303183 SNPs remaining
-
 # remove temp vcfs
 
 rm temp.vcf temp2.vcf
 
-
-
+#~~ END
+#~~ Go to variant annotation
 

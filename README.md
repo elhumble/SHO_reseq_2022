@@ -49,7 +49,7 @@ For downstream analysis and visualisation of outputs, please see github reposito
 `5.0_PCAngsd.sh`  
 `5.1_NGSadmix.sh`  
 
-*Polarisation and SNP annotation*  
+*Polarisation and variant annotation*  
 `6.0_align_sp.sh`  
 `6.1_SortSam.sh`  
 `6.2_MergeSam.sh`  
@@ -66,4 +66,4 @@ For downstream analysis and visualisation of outputs, please see github reposito
 -------------
 Sequencing reads required to run the pipeline are available at the European Nucleotide Archive (https://www.ebi.ac.uk/ena/browser) under study accession [PRJEB37295](https://www.ebi.ac.uk/ena/browser/view/PRJEB37295?show=related-records).
 
-Genome assembly and RefSeq annotation GCF_014754425.2 are available [here](https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/014/754/425/GCF_014754425.2_SCBI_Odam_1.1/).
+Genome assembly and RefSeq annotation used in the pipeline (GCF_014754425.2) are available [here](https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/014/754/425/GCF_014754425.2_SCBI_Odam_1.1/).

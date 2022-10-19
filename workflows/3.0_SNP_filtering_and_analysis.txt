@@ -72,7 +72,6 @@ awk 'BEGIN { OFS = "\t" } { $1 = "NW_" $1; print }'
 ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf.map > test
 mv test ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf.map
 
-
 # Allele frequencies within populations
 
 plink --file ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf --freq \
@@ -118,8 +117,6 @@ plink --file ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf \
 -c 1
 
 # Go to R script on local to analyse downstream data -- KING versus R1
-# 1.0_IBD.R
-
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~#
 #          ROH            #
@@ -129,7 +126,7 @@ plink --file ORYX_geno_DS_NS_biallelic_chr_mdepth_miss_maf \
 # (Private ranch)
 # to balance populations
 
-# Remove two individuals from EAD displaying over 50% ancestry Hilwa: MSH238 &
+# Remove two individuals from EAD_A displaying over 50% EAD_B ancestry: MSH238 &
 # MSH250
 
 #~~ PLINK
