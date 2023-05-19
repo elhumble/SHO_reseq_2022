@@ -1,4 +1,6 @@
-**Conservation management strategy impacts inbreeding and mutation load in scimitar-horned oryx**
+**Analysis code for:**
+-------------
+Humble E, Stoffel MA, Dicks K, Ball AD, Gooley RM, Chuven J, Pusey R, Al Remeithi M, Koepfli KP, Pukazhenthi B, Senn H, Ogden R (2023) **Conservation management strategy impacts inbreeding and mutation load in scimitar-horned oryx.**  *PNAS*. **120**, 18. https://doi.org/10.1073/pnas.2210756120.  
 
 **Summary**
 -------------
