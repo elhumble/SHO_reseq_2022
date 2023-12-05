@@ -41,7 +41,6 @@ echo $bamlist
 echo $THIS_DIR
 
 java -Xmx8g -jar /exports/cmvm/eddie/eb/groups/ogden_grp/software/picard/picard.jar MergeSamFiles \
-       $bamlist \
-       O=${THIS_DIR}_merged.bam \
-       TMP_DIR=$SCRATCH
-
+	       $bamlist \
+	              O=${THIS_DIR}_merged.bam \
+		             TMP_DIR=$SCRATCH
